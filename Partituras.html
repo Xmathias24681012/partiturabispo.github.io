@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Partituras</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 30px;
+            font-size: 2rem;
+        }
+
+        #hino-search {
+            width: calc(100% - 120px);
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        #search-button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        #search-button:hover {
+            background-color: #0056b3;
+        }
+
+        .hino-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+
+        .hino-list li {
+            margin: 10px 0;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+        }
+
+        .upload-form {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .upload-form input[type="file"] {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .upload-form button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-form button:hover {
+            background-color: #218838;
+        }
+
+        .hino-details {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .hino-details h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .file-preview {
+            margin: 10px 0;
+        }
+
+        .file-preview img,
+        .file-preview embed {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+
+        .hino-actions {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .hino-actions button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .hino-actions button.download {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .hino-actions button.delete {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .hino-actions button.download:hover {
+            background-color: #0056b3;
+        }
+
+        .hino-actions button.delete:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gerenciador de Partituras</h1>
+        <input type="text" id="hino-search" placeholder="Digite o número ou nome do hino">
+        <button id="search-button">Pesquisar</button>
+        <ul id="hino-list" class="hino-list">
+            <!-- Lista de hinos será gerada aqui -->
+        </ul>
+        <div id="upload-form" class="upload-form">
+            <form id="form-upload">
+                <input type="file" id="file-input" name="file" required>
+                <input type="hidden" id="hino-number" name="hino-number">
+                <button type="submit">Subir Partitura</button>
+            </form>
+        </div>
+        <div id="hino-details" class="hino-details">
+            <h2 id="hino-title"></h2>
+            <div id="file-preview" class="file-preview">
+                <!-- Pré-visualização do arquivo -->
+            </div>
+        </div>
+        <div id="hino-actions" class="hino-actions">
+            <a id="download-link" href="#" target="_blank">
+                <button class="download">Baixar Partitura</button>
+            </a>
+            <button id="delete-button" class="delete">Deletar Partitura</button>
+        </div>
+    </div>
+
+    <script>
+        const hinos = [
+    { numero: 1, nome: "Alvo Mais Que a Neve" },
+    { numero: 2, nome: "Grandioso És Tu" },
+    { numero: 3, nome: "Firme nas Promessas" },
+    { numero: 4, nome: "Deus Velará por Ti" },
+    { numero: 5, nome: "Saudosa Lembrança" },
+    { numero: 6, nome: "Mais Perto Quero Estar" },
+    { numero: 7, nome: "Cristo é Real para Mim" },
+    { numero: 8, nome: "Santo! Santo! Santo!" },
+    { numero: 9, nome: "A Alma Abatida" },
+    { numero: 10, nome: "Rude Cruz" },
+    { numero: 11, nome: "Vencendo Vem Jesus" },
+    { numero: 12, nome: "Faz-me Mais Puro" },
+    { numero: 13, nome: "O Amor de Deus" },
+    { numero: 14, nome: "Chuvas de Graça" },
+    { numero: 15, nome: "A Mensagem da Cruz" },
+    { numero: 16, nome: "Oh! Quão Cego Andei" },
+    { numero: 17, nome: "Vem pra Luz" },
+    { numero: 18, nome: "Aleluia! Cristo Vem" },
+    { numero: 19, nome: "Perto de Deus" },
+    { numero: 20, nome: "Marchando para Sião" },
+    { numero: 21, nome: "Bendita a Hora de Oração" },
+    { numero: 22, nome: "Doce Nome de Jesus" },
+    { numero: 23, nome: "Ó Que Amigo em Cristo Temos!" },
+    { numero: 24, nome: "Pai, Atende à Oração" },
+    { numero: 25, nome: "Sim, Cristo me Ama" },
+    { numero: 26, nome: "Foi na Cruz" },
+    { numero: 27, nome: "De Todo o Mundo os Reinos" },
+    { numero: 28, nome: "Oh! Vem ao Salvador" },
+    { numero: 29, nome: "Manso e Suave" },
+    { numero: 30, nome: "Que Prazer é Ter Jesus" },
+    { numero: 31, nome: "Vem, Grande Amigo" },
+    { numero: 32, nome: "És Tu o Anseio Meu" },
+    { numero: 33, nome: "Não Tardará" },
+    { numero: 34, nome: "O Pecador, Contempla!" },
+    { numero: 35, nome: "Desperta! Povo de Deus!" },
+    { numero: 36, nome: "Daime a Antiga História" },
+    { numero: 37, nome: "O Bom Pastor" },
+    { numero: 38, nome: "Jesus é Meu Amigo" },
+    { numero: 39, nome: "Que Benção Divinal" },
+    { numero: 40, nome: "Oh! Vem ao Bom Jesus" },
+    { numero: 41, nome: "Jesus me Satisfaz" },
+    { numero: 42, nome: "Cristo te Chama" },
+    { numero: 43, nome: "Dá-me o Teu Coração" },
+    { numero: 44, nome: "Oh! Vinde ao Salvador" },
+    { numero: 45, nome: "Eu Creio no Meu Salvador" },
+    { numero: 46, nome: "Sempre Fiel" },
+    { numero: 47, nome: "Confiar e Obedecer" },
+    { numero: 48, nome: "Vem, Grande Amigo" },
+    { numero: 49, nome: "Cordeiro Santo" },
+    { numero: 50, nome: "Feliz Dia" },
+    { numero: 51, nome: "Meu Deus, eu Te Exalto" },
+    { numero: 52, nome: "Alegra-te, Ó Cristão" },
+    { numero: 53, nome: "Paz Perfeita" },
+    { numero: 54, nome: "Sublime Amor" },
+    { numero: 55, nome: "A Esperança do Crente" },
+    { numero: 56, nome: "Despertar ao Amanhecer" },
+    { numero: 57, nome: "O Grande Dia" },
+    { numero: 58, nome: "Cristo é a Nossa Paz" },
+    { numero: 59, nome: "Cristo é o Meu Salvador" },
+    { numero: 60, nome: "Não Há Deus Maior" },
+    { numero: 61, nome: "Ó! Não te Esqueças" },
+    { numero: 62, nome: "Desperta, Ó Alma" },
+    { numero: 63, nome: "Chegou a Hora" },
+    { numero: 64, nome: "Em Orações Afiadas" },
+    { numero: 65, nome: "Sobre os Pés dos Santos" },
+    { numero: 66, nome: "Louvado Seja Cristo" },
+    { numero: 67, nome: "Sangue de Jesus" },
+    { numero: 68, nome: "Ó Cristão, Desperta" },
+    { numero: 69, nome: "A Grata Nova" },
+    { numero: 70, nome: "Ajudando o Meu Irmão" },
+    { numero: 71, nome: "Rei dos Reis" },
+    { numero: 72, nome: "Com Glória Vestido" },
+    { numero: 73, nome: "A Minha Alegria" },
+    { numero: 74, nome: "Ao Pé da Cruz" },
+    { numero: 75, nome: "Jesus, Meus Pecados" },
+    { numero: 76, nome: "A Força da Paz" },
+    { numero: 77, nome: "Cristo, Meu Salvador" },
+    { numero: 78, nome: "Ao Amado Deus" },
+    { numero: 79, nome: "A Minha Luz" },
+    { numero: 80, nome: "Caminhando para o Céu" },
+    { numero: 81, nome: "Sobre os Céus" },
+    { numero: 82, nome: "Confiando no Senhor" },
+    { numero: 83, nome: "Jesus de Nazaré" },
+    { numero: 84, nome: "O Meu Jesus é Tudo" },
+    { numero: 85, nome: "Cristo, Amigo Fiel" },
+    { numero: 86, nome: "Como Cristo é Bom" },
+    { numero: 87, nome: "Ó! Vem Seguir a Cristo" },
+    { numero: 88, nome: "Que Amigo é o Cristo" },
+    { numero: 89, nome: "Salvo por Jesus" },
+    { numero: 90, nome: "Estou na Promessa" },
+    { numero: 91, nome: "Glória ao Nome de Jesus" },
+    { numero: 92, nome: "Fé e Esperança" },
+    { numero: 93, nome: "Amo a Cristo, Rei do Céu" },
+    { numero: 94, nome: "Jesus é o Amigo Leal" },
+    { numero: 95, nome: "Deus é Amor" },
+    { numero: 96, nome: "Canta ao Senhor" },
+    { numero: 97, nome: "Sei que o Meu Redentor Vive" },
+    { numero: 98, nome: "Vamos Orar" },
+    { numero: 99, nome: "Vem, Ó! Mestre Amado" },
+    { numero: 100, nome: "Descanso, Paz e Amor" },
+    { numero: 101, nome: "Jesus, Fonte de Vida" },
+    { numero: 102, nome: "Firme na Fé" },
+    { numero: 103, nome: "Bem-Aventurança" },
+    { numero: 104, nome: "A Riqueza do Crente" },
+    { numero: 105, nome: "Ao Nosso Redentor" },
+    { numero: 106, nome: "A Luz do Evangelho" },
+    { numero: 107, nome: "Com Cristo na Cruz" },
+    { numero: 108, nome: "Ó! Vem ao Salvador" },
+    { numero: 109, nome: "Que Eterna Paz" },
+    { numero: 110, nome: "A Presença de Deus" },
+    { numero: 111, nome: "Fé, Esperança e Amor" },
+    { numero: 112, nome: "Caminhando com Cristo" },
+    { numero: 113, nome: "Paz que o Mundo Não Dá" },
+    { numero: 114, nome: "O Bom Pastor é Cristo" },
+    { numero: 115, nome: "A Verdadeira Paz" },
+    { numero: 116, nome: "Deus Conosco Está" },
+    { numero: 117, nome: "Segurança em Cristo" },
+    { numero: 118, nome: "A Esperança Eterna" },
+    { numero: 119, nome: "Jesus, Nosso Amparo" },
+    { numero: 120, nome: "Vem, Senhor, Vem" },
+    { numero: 121, nome: "O Senhor é Meu Pastor" },
+    { numero: 122, nome: "Salvador Meu" },
+    { numero: 123, nome: "Levantando as Mãos" },
+    { numero: 124, nome: "Firme na Rocha" },
+    { numero: 125, nome: "Canta ao Senhor, Ó Alma" },
+    { numero: 126, nome: "Bendito Seja o Nome" },
+    { numero: 127, nome: "Fonte de Vida" },
+    { numero: 128, nome: "Em Cristo Seguro" },
+    { numero: 129, nome: "Tua Palavra, Senhor" },
+    { numero: 130, nome: "Alegria do Senhor" },
+    { numero: 131, nome: "Vivendo em Cristo" },
+    { numero: 132, nome: "Meus Pecados Perdoa" },
+    { numero: 133, nome: "Paz na Tempestade" },
+    { numero: 134, nome: "Que Lindo é o Céu" },
+    { numero: 135, nome: "Teu Amor, Ó Senhor" },
+    { numero: 136, nome: "A Cristo Louvamos" },
+    { numero: 137, nome: "Firme em Ti, Senhor" },
+    { numero: 138, nome: "Deus é o Meu Refúgio" },
+    { numero: 139, nome: "Ó! Deus, Meu Salvador" },
+    { numero: 140, nome: "Em Cristo, Vida Nova" },
+    { numero: 141, nome: "O Amor do Senhor" },
+    { numero: 142, nome: "Salmo de Louvor" },
+    { numero: 143, nome: "Em Ti, Senhor, Confio" },
+    { numero: 144, nome: "Glória ao Nome de Cristo" },
+    { numero: 145, nome: "Salvação Eterna" },
+    { numero: 146, nome: "Alegria em Cristo" },
+    { numero: 147, nome: "Cantemos ao Senhor" },
+    { numero: 148, nome: "Cristo é o Meu Lar" },
+    { numero: 149, nome: "Ressurreição e Vida" },
+    { numero: 150, nome: "Cantando ao Salvador" },
+    { numero: 151, nome: "Ó! Cristo, Meu Pastor" },
+    { numero: 152, nome: "Feliz com Jesus" },
+    { numero: 153, nome: "Deus é o Meu Tudo" },
+    { numero: 154, nome: "Vem Louvar a Cristo" },
+    { numero: 155, nome: "Toda Glória ao Senhor" },
+    { numero: 156, nome: "Aleluia, Cantamos" },
+    { numero: 157, nome: "Em Ti, Senhor, Me Alegro" },
+    { numero: 158, nome: "A Paz do Senhor" },
+    { numero: 159, nome: "A Salvação é em Cristo" },
+    { numero: 160, nome: "No Senhor, Eu Descanso" },
+    { numero: 161, nome: "Vem, Senhor, Jesus" },
+    { numero: 162, nome: "Ó! Doce Nome de Jesus" },
+    { numero: 163, nome: "Cantemos ao Rei" },
+    { numero: 164, nome: "Cristo, Amigo Leal" },
+    { numero: 165, nome: "Confio em Teu Amor" },
+    { numero: 166, nome: "Aos Céus, Glória" },
+    { numero: 167, nome: "Com Cristo ao Meu Lado" },
+    { numero: 168, nome: "Meu Redentor Vive" },
+    { numero: 169, nome: "Segurança em Cristo" },
+    { numero: 170, nome: "Canta ao Senhor" },
+    { numero: 171, nome: "Jesus é Meu Refúgio" },
+    { numero: 172, nome: "Em Cristo, Vivo" },
+    { numero: 173, nome: "Oh! Que Amigo é Jesus" },
+    { numero: 174, nome: "Fé em Cristo" },
+    { numero: 175, nome: "Ó! Meu Senhor e Deus" },
+    { numero: 176, nome: "Oração ao Senhor" },
+    { numero: 177, nome: "Glória ao Salvador" },
+    { numero: 178, nome: "Em Teu Amor" },
+    { numero: 179, nome: "Salmo de Fé" },
+    { numero: 180, nome: "Toda Glória ao Deus" },
+    { numero: 181, nome: "Louvai ao Senhor" },
+    { numero: 182, nome: "Paz e Alegria" },
+    { numero: 183, nome: "Com Cristo Sempre" },
+    { numero: 184, nome: "Vem, Senhor Jesus" },
+    { numero: 185, nome: "Em Cristo, Alegria" },
+    { numero: 186, nome: "O Senhor é Meu Amparo" },
+    { numero: 187, nome: "Oh! Glória ao Nome" },
+    { numero: 188, nome: "Canta, Ó Alma" },
+    { numero: 189, nome: "Em Cristo, Louvor" },
+    { numero: 190, nome: "Paz em Cristo" },
+    { numero: 191, nome: "O Amor do Senhor" },
+    { numero: 192, nome: "Em Teu Nome" },
+    { numero: 193, nome: "Com Cristo Vivo" },
+    { numero: 194, nome: "A Deus Louvamos" },
+    { numero: 195, nome: "Fé em Cristo" },
+    { numero: 196, nome: "Aleluia ao Senhor" },
+    { numero: 197, nome: "Louvor ao Salvador" },
+    { numero: 198, nome: "Paz em Cristo" },
+    { numero: 199, nome: "O Senhor é Meu Pastor" },
+    { numero: 200, nome: "Vem, Ó! Senhor" },
+    { numero: 201, nome: "Fé e Confiança" },
+    { numero: 202, nome: "Jesus é o Meu Tudo" },
+    { numero: 203, nome: "Ó! Glória a Deus" },
+    { numero: 204, nome: "Em Cristo, Louvor" },
+    { numero: 205, nome: "A Paz de Cristo" },
+    { numero: 206, nome: "Vem, Senhor, Jesus" },
+    { numero: 207, nome: "Salvação Eterna" },
+    { numero: 208, nome: "Alegria no Senhor" },
+    { numero: 209, nome: "O Amor de Deus" },
+    { numero: 210, nome: "Paz e Esperança" },
+    { numero: 211, nome: "Em Cristo, Firme" },
+    { numero: 212, nome: "Cristo é a Minha Paz" },
+    { numero: 213, nome: "Deus, Meu Senhor" },
+    { numero: 214, nome: "Alegria em Cristo" },
+    { numero: 215, nome: "Salmo de Louvor" },
+    { numero: 216, nome: "Toda Glória ao Senhor" },
+    { numero: 217, nome: "Em Teu Nome" },
+    { numero: 218, nome: "Canta ao Salvador" },
+    { numero: 219, nome: "Ó! Senhor, Meu Deus" },
+    { numero: 220, nome: "Vem, Cristo, Vem" },
+    { numero: 221, nome: "Fé e Esperança" },
+    { numero: 222, nome: "O Senhor é Fiel" },
+    { numero: 223, nome: "Glória a Cristo" },
+    { numero: 224, nome: "Em Cristo Vivo" },
+    { numero: 225, nome: "Paz e Alegria" },
+    { numero: 226, nome: "Canta ao Senhor" },
+    { numero: 227, nome: "Ó! Glória ao Salvador" },
+    { numero: 228, nome: "Em Teu Amor" },
+    { numero: 229, nome: "Toda Paz em Cristo" },
+    { numero: 230, nome: "O Senhor é Meu Refúgio" },
+    { numero: 231, nome: "Cristo é o Meu Amigo" },
+    { numero: 232, nome: "Alegria ao Senhor" },
+    { numero: 233, nome: "Salvação Eterna" },
+    { numero: 234, nome: "Glória a Deus" },
+    { numero: 235, nome: "Em Cristo, Paz" },
+    { numero: 236, nome: "Vem, Ó Senhor" },
+    { numero: 237, nome: "Toda Alegria em Cristo" },
+    { numero: 238, nome: "Fé no Senhor" },
+    { numero: 239, nome: "Cristo é Tudo" },
+    { numero: 240, nome: "Paz e Esperança" },
+    { numero: 241, nome: "O Amor de Deus" },
+    { numero: 242, nome: "Em Cristo, Louvor" },
+    { numero: 243, nome: "Glória ao Senhor" },
+    { numero: 244, nome: "Canta ao Salvador" },
+    { numero: 245, nome: "Ó! Senhor, Meu Deus" },
+    { numero: 246, nome: "Vem, Senhor Jesus" },
+    { numero: 247, nome: "Toda Alegria em Cristo" },
+    { numero: 248, nome: "Fé e Confiança" },
+    { numero: 249, nome: "Cristo é o Meu Tudo" },
+    { numero: 250, nome: "Paz em Cristo" },
+    { numero: 251, nome: "Salvação Eterna" },
+    { numero: 252, nome: "Glória a Cristo" },
+    { numero: 253, nome: "Em Teu Amor" },
+    { numero: 254, nome: "Canta ao Senhor" },
+    { numero: 255, nome: "Ó! Senhor, Meu Deus" },
+    { numero: 256, nome: "Vem, Ó Senhor" },
+    { numero: 257, nome: "Fé e Esperança" },
+    { numero: 258, nome: "Cristo é Meu Amigo" },
+    { numero: 259, nome: "Toda Paz em Cristo" },
+    { numero: 260, nome: "Alegria ao Senhor" },
+    { numero: 261, nome: "O Amor de Deus" },
+    { numero: 262, nome: "Em Cristo, Paz" },
+    { numero: 263, nome: "Glória a Deus" },
+    { numero: 264, nome: "Vem, Senhor Jesus" },
+    { numero: 265, nome: "Paz e Esperança" },
+    { numero: 266, nome: "Cristo é Tudo" },
+    { numero: 267, nome: "Toda Alegria em Cristo" },
+    { numero: 268, nome: "Fé em Cristo" },
+    { numero: 269, nome: "A Alma Abatida" },
+    { numero: 270, nome: "Salvação Eterna" },
+    { numero: 271, nome: "O Senhor é Meu Refúgio" },
+    { numero: 272, nome: "Cristo é o Meu Tudo" },
+    { numero: 273, nome: "Alegria ao Senhor" },
+    { numero: 274, nome: "Paz e Esperança" },
+    { numero: 275, nome: "Glória a Deus" },
+    { numero: 276, nome: "Em Cristo, Louvor" },
+    { numero: 277, nome: "Toda Paz em Cristo" },
+    { numero: 278, nome: "Fé e Confiança" },
+    { numero: 279, nome: "O Amor de Deus" },
+    { numero: 280, nome: "Vem, Senhor Jesus" },
+    { numero: 281, nome: "Cristo é Tudo" },
+    { numero: 282, nome: "Toda Alegria em Cristo" },
+    { numero: 283, nome: "Fé e Esperança" },
+    { numero: 284, nome: "Em Teu Amor" },
+    { numero: 285, nome: "Paz e Alegria" },
+    { numero: 286, nome: "Glória ao Senhor" },
+    { numero: 287, nome: "Canta ao Salvador" },
+    { numero: 288, nome: "Ó! Senhor, Meu Deus" },
+    { numero: 289, nome: "Vem, Ó Senhor" },
+    { numero: 290, nome: "Cristo é Meu Amigo" },
+    { numero: 291, nome: "Toda Paz em Cristo" },
+    { numero: 292, nome: "Fé e Esperança" },
+    { numero: 293, nome: "O Amor de Deus" },
+    { numero: 294, nome: "Em Cristo, Louvor" },
+    { numero: 295, nome: "Glória a Deus" },
+    { numero: 296, nome: "Vem, Senhor Jesus" },
+    { numero: 297, nome: "Paz e Alegria" },
+    { numero: 298, nome: "Cristo é Tudo" },
+    { numero: 299, nome: "Toda Alegria em Cristo" },
+    { numero: 300, nome: "Fé e Confiança" },
+    { numero: 301, nome: "Em Teu Amor" },
+    { numero: 302, nome: "O Amor de Deus" },
+    { numero: 303, nome: "Glória ao Senhor" },
+    { numero: 304, nome: "Cristo é o Meu Tudo" },
+    { numero: 305, nome: "Vem, Senhor Jesus" },
+    { numero: 306, nome: "Paz e Esperança" },
+    { numero: 307, nome: "Toda Paz em Cristo" },
+    { numero: 308, nome: "Fé e Confiança" },
+    { numero: 309, nome: "Em Cristo, Louvor" },
+    { numero: 310, nome: "Alegria ao Senhor" },
+    { numero: 311, nome: "O Senhor é Meu Refúgio" },
+    { numero: 312, nome: "Vem, Ó Senhor" },
+    { numero: 313, nome: "Toda Alegria em Cristo" },
+    { numero: 314, nome: "Cristo é Meu Amigo" },
+    { numero: 315, nome: "Em Teu Amor" },
+    { numero: 316, nome: "Paz e Esperança" },
+    { numero: 317, nome: "Glória a Deus" },
+    { numero: 318, nome: "Vem, Senhor Jesus" },
+    { numero: 319, nome: "Cristo é Tudo" },
+    { numero: 320, nome: "Fé e Esperança" },
+    { numero: 321, nome: "Toda Alegria em Cristo" },
+    { numero: 322, nome: "O Amor de Deus" },
+    { numero: 323, nome: "Em Cristo, Louvor" },
+    { numero: 324, nome: "Glória ao Senhor" },
+    { numero: 325, nome: "Paz e Alegria" },
+    { numero: 326, nome: "Vem, Ó Senhor" },
+    { numero: 327, nome: "Cristo é Meu Amigo" },
+    { numero: 328, nome: "Toda Paz em Cristo" },
+    { numero: 329, nome: "Fé e Confiança" },
+    { numero: 330, nome: "O Senhor é Meu Refúgio" },
+    { numero: 331, nome: "Alegria ao Senhor" },
+    { numero: 332, nome: "Vem, Senhor Jesus" },
+    { numero: 333, nome: "Toda Alegria em Cristo" },
+    { numero: 334, nome: "Cristo é Tudo" },
+    { numero: 335, nome: "Em Teu Amor" },
+    { numero: 336, nome: "Glória a Deus" },
+    { numero: 337, nome: "Paz e Esperança" },
+    { numero: 338, nome: "Vem, Ó Senhor" },
+    { numero: 339, nome: "Toda Paz em Cristo" },
+    { numero: 340, nome: "Fé e Confiança" },
+    { numero: 341, nome: "O Amor de Deus" },
+    { numero: 342, nome: "Cristo é o Meu Tudo" },
+    { numero: 343, nome: "Em Cristo, Louvor" },
+    { numero: 344, nome: "Glória ao Senhor" },
+    { numero: 345, nome: "Paz e Alegria" },
+    { numero: 346, nome: "Vem, Senhor Jesus" },
+    { numero: 347, nome: "Toda Alegria em Cristo" },
+    { numero: 348, nome: "Cristo é Meu Amigo" },
+    { numero: 349, nome: "Em Teu Amor" },
+    { numero: 350, nome: "Fé e Esperança" },
+    { numero: 351, nome: "O Senhor é Meu Refúgio" },
+    { numero: 352, nome: "Toda Paz em Cristo" },
+    { numero: 353, nome: "Alegria ao Senhor" },
+    { numero: 354, nome: "Vem, Ó Senhor" },
+    { numero: 355, nome: "Cristo é Tudo" },
+    { numero: 356, nome: "Em Cristo, Louvor" },
+    { numero: 357, nome: "Paz e Esperança" },
+    { numero: 358, nome: "Toda Alegria em Cristo" },
+    { numero: 359, nome: "Fé e Confiança" },
+    { numero: 360, nome: "Glória a Deus" },
+    { numero: 361, nome: "Vem, Senhor Jesus" },
+    { numero: 362, nome: "Cristo é Meu Amigo" },
+    { numero: 363, nome: "Toda Paz em Cristo" },
+    { numero: 364, nome: "Alegria ao Senhor" },
+    { numero: 365, nome: "O Senhor é Meu Refúgio" },
+    { numero: 366, nome: "Em Cristo, Louvor" },
+    { numero: 367, nome: "Glória a Deus" },
+    { numero: 368, nome: "Paz e Esperança" },
+    { numero: 369, nome: "Vem, Ó Senhor" },
+    { numero: 370, nome: "Toda Alegria em Cristo" },
+    { numero: 371, nome: "Cristo é Tudo" },
+    { numero: 372, nome: "Em Teu Amor" },
+    { numero: 373, nome: "Paz e Alegria" },
+    { numero: 374, nome: "Alegria ao Senhor" },
+    { numero: 375, nome: "Toda Paz em Cristo" },
+    { numero: 376, nome: "Vem, Senhor Jesus" },
+    { numero: 377, nome: "Cristo é Meu Amigo" },
+    { numero: 378, nome: "Fé e Confiança" },
+    { numero: 379, nome: "O Senhor é Meu Refúgio" },
+    { numero: 380, nome: "Em Cristo, Louvor" },
+    { numero: 381, nome: "Paz e Esperança" },
+    { numero: 382, nome: "Toda Alegria em Cristo" },
+    { numero: 383, nome: "Cristo é Tudo" },
+    { numero: 384, nome: "Em Teu Amor" },
+    { numero: 385, nome: "Vem, Ó Senhor" },
+    { numero: 386, nome: "Alegria ao Senhor" },
+    { numero: 387, nome: "Paz e Alegria" },
+    { numero: 388, nome: "Toda Paz em Cristo" },
+    { numero: 389, nome: "Cristo é Meu Amigo" },
+    { numero: 390, nome: "Fé e Confiança" },
+    { numero: 391, nome: "O Senhor é Meu Refúgio" },
+    { numero: 392, nome: "Em Cristo, Louvor" },
+    { numero: 393, nome: "Toda Alegria em Cristo" },
+    { numero: 394, nome: "Cristo é Tudo" },
+    { numero: 395, nome: "Paz e Esperança" },
+    { numero: 396, nome: "Vem, Senhor Jesus" },
+    { numero: 397, nome: "Alegria ao Senhor" },
+    { numero: 398, nome: "Toda Paz em Cristo" },
+    { numero: 399, nome: "Fé e Confiança" },
+    { numero: 400, nome: "Em Teu Amor" },
+    { numero: 401, nome: "Paz e Alegria" },
+    { numero: 402, nome: "Cristo é Meu Amigo" },
+    { numero: 403, nome: "Vem, Ó Senhor" },
+    { numero: 404, nome: "Toda Alegria em Cristo" },
+    { numero: 405, nome: "O Senhor é Meu Refúgio" },
+    { numero: 406, nome: "Em Cristo, Louvor" },
+    { numero: 407, nome: "Fé e Confiança" },
+    { numero: 408, nome: "Cristo é Tudo" },
+    { numero: 409, nome: "Toda Paz em Cristo" },
+    { numero: 410, nome: "Alegria ao Senhor" },
+    { numero: 411, nome: "Paz e Esperança" },
+    { numero: 412, nome: "Vem, Senhor Jesus" },
+    { numero: 413, nome: "Em Teu Amor" },
+    { numero: 414, nome: "Cristo é Meu Amigo" },
+    { numero: 415, nome: "Toda Alegria em Cristo" },
+    { numero: 416, nome: "Paz e Alegria" },
+    { numero: 417, nome: "O Senhor é Meu Refúgio" },
+    { numero: 418, nome: "Em Cristo, Louvor" },
+    { numero: 419, nome: "Vem, Ó Senhor" },
+    { numero: 420, nome: "Toda Paz em Cristo" },
+    { numero: 421, nome: "Alegria ao Senhor" },
+    { numero: 422, nome: "Cristo é Tudo" },
+    { numero: 423, nome: "Paz e Esperança" },
+    { numero: 424, nome: "Fé e Confiança" },
+    { numero: 425, nome: "Vem, Senhor Jesus" },
+    { numero: 426, nome: "Toda Alegria em Cristo" },
+    { numero: 427, nome: "Em Teu Amor" },
+    { numero: 428, nome: "Cristo é Meu Amigo" },
+    { numero: 429, nome: "Paz e Alegria" },
+    { numero: 430, nome: "O Senhor é Meu Refúgio" },
+    { numero: 431, nome: "Toda Paz em Cristo" },
+    { numero: 432, nome: "Alegria ao Senhor" },
+    { numero: 433, nome: "Fé e Confiança" },
+    { numero: 434, nome: "Em Cristo, Louvor" },
+    { numero: 435, nome: "Cristo é Tudo" },
+    { numero: 436, nome: "Vem, Ó Senhor" },
+    { numero: 437, nome: "Paz e Esperança" },
+    { numero: 438, nome: "Toda Alegria em Cristo" },
+    { numero: 439, nome: "O Senhor é Meu Refúgio" },
+    { numero: 440, nome: "Alegria ao Senhor" },
+    { numero: 441, nome: "Cristo é Meu Amigo" },
+    { numero: 442, nome: "Em Teu Amor" },
+    { numero: 443, nome: "Vem, Senhor Jesus" },
+    { numero: 444, nome: "Paz e Alegria" },
+    { numero: 445, nome: "Toda Paz em Cristo" },
+    { numero: 446, nome: "Fé e Confiança" },
+    { numero: 447, nome: "Cristo é Tudo" },
+    { numero: 448, nome: "Em Cristo, Louvor" },
+    { numero: 449, nome: "Alegria ao Senhor" },
+    { numero: 450, nome: "Paz e Esperança" },
+    { numero: 451, nome: "Toda Alegria em Cristo" },
+    { numero: 452, nome: "O Senhor é Meu Refúgio" },
+    { numero: 453, nome: "Vem, Ó Senhor" },
+    { numero: 454, nome: "Cristo é Meu Amigo" },
+    { numero: 455, nome: "Toda Paz em Cristo" },
+    { numero: 456, nome: "Paz e Alegria" },
+    { numero: 457, nome: "Fé e Confiança" },
+    { numero: 458, nome: "Alegria ao Senhor" },
+    { numero: 459, nome: "Em Teu Amor" },
+    { numero: 460, nome: "Vem, Senhor Jesus" },
+    { numero: 461, nome: "Toda Alegria em Cristo" },
+    { numero: 462, nome: "Cristo é Tudo" },
+    { numero: 463, nome: "Em Cristo, Louvor" },
+    { numero: 464, nome: "Paz e Esperança" },
+    { numero: 465, nome: "O Senhor é Meu Refúgio" },
+    { numero: 466, nome: "Vem, Ó Senhor" },
+    { numero: 467, nome: "Toda Paz em Cristo" },
+    { numero: 468, nome: "Alegria ao Senhor" },
+    { numero: 469, nome: "Fé e Confiança" },
+    { numero: 470, nome: "Cristo é Meu Amigo" },
+    { numero: 471, nome: "Paz e Alegria" },
+    { numero: 472, nome: "Toda Alegria em Cristo" },
+    { numero: 473, nome: "O Senhor é Meu Refúgio" },
+    { numero: 474, nome: "Cristo é Tudo" },
+    { numero: 475, nome: "Vem, Senhor Jesus" },
+    { numero: 476, nome: "Em Cristo, Louvor" },
+    { numero: 477, nome: "Paz e Esperança" },
+    { numero: 478, nome: "Toda Paz em Cristo" },
+    { numero: 479, nome: "Alegria ao Senhor" },
+    { numero: 480, nome: "Fé e Confiança" },
+    { numero: 481, nome: "Em Teu Amor" },
+    { numero: 482, nome: "Vem, Ó Senhor" },
+    { numero: 483, nome: "Cristo é Meu Amigo" },
+    { numero: 484, nome: "Paz e Alegria" },
+    { numero: 485, nome: "Toda Alegria em Cristo" },
+    { numero: 486, nome: "Cristo é Tudo" },
+    { numero: 487, nome: "Em Cristo, Louvor" },
+    { numero: 488, nome: "Paz e Esperança" },
+    { numero: 489, nome: "O Senhor é Meu Refúgio" },
+    { numero: 490, nome: "Vem, Senhor Jesus" },
+    { numero: 491, nome: "Alegria ao Senhor" },
+    { numero: 492, nome: "Toda Paz em Cristo" },
+    { numero: 493, nome: "Fé e Confiança" },
+    { numero: 494, nome: "Cristo é Meu Amigo" },
+    { numero: 495, nome: "Paz e Alegria" },
+    { numero: 496, nome: "Em Teu Amor" },
+    { numero: 497, nome: "Toda Alegria em Cristo" },
+    { numero: 498, nome: "Cristo é Tudo" },
+    { numero: 499, nome: "Paz e Esperança" },
+    { numero: 500, nome: "Vem, Senhor Jesus" } 
+];
+
+
+        const hinoList = document.getElementById('hino-list');
+        const uploadForm = document.getElementById('upload-form');
+        const hinoNumberInput = document.getElementById('hino-number');
+        const fileInput = document.getElementById('file-input');
+        const formUpload = document.getElementById('form-upload');
+        const hinoSearch = document.getElementById('hino-search');
+        const searchButton = document.getElementById('search-button');
+        const hinoDetails = document.getElementById('hino-details');
+        const hinoTitle = document.getElementById('hino-title');
+        const filePreview = document.getElementById('file-preview');
+        const hinoActions = document.getElementById('hino-actions');
+        const downloadLink = document.getElementById('download-link');
+        const deleteButton = document.getElementById('delete-button');
+
+        // Armazenamento simulado de arquivos
+        const hinoFiles = {};
+
+        function renderHinoList() {
+            hinos.forEach(hino => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = '#';
+                a.textContent = `${hino.numero} - ${hino.nome}`;
+                a.addEventListener('click', () => showHinoDetails(hino.numero));
+                li.appendChild(a);
+                hinoList.appendChild(li);
+            });
+        }
+
+        function showHinoDetails(hinoNumber) {
+            hinoNumberInput.value = hinoNumber;
+            uploadForm.style.display = 'block';
+            const hino = hinos.find(h => h.numero === hinoNumber);
+            hinoTitle.textContent = `${hino.numero} - ${hino.nome}`;
+            hinoDetails.style.display = 'block';
+
+            // Mostra o arquivo se existir
+            if (hinoFiles[hinoNumber]) {
+                const file = hinoFiles[hinoNumber];
+                filePreview.innerHTML = `
+                    <strong>Arquivo: ${file.name}</strong><br>
+                    <embed src="${file.url}" alt="Pré-visualização" style="max-width: 100%; height: 200px;"><br>
+                `;
+                downloadLink.href = file.url;
+                hinoActions.style.display = 'block';
+            } else {
+                filePreview.innerHTML = `<strong>Nenhum arquivo carregado.</strong>`;
+                hinoActions.style.display = 'none';
+            }
+        }
+
+        formUpload.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const hinoNumber = hinoNumberInput.value;
+            const file = fileInput.files[0];
+            if (file) {
+                // Simula o upload do arquivo
+                const fileURL = URL.createObjectURL(file); // Para pré-visualização
+                hinoFiles[hinoNumber] = { name: file.name, url: fileURL };
+                alert(`Arquivo ${file.name} enviado com sucesso para o hino ${hinoNumber}!`);
+                showHinoDetails(hinoNumber); // Atualiza a exibição
+                fileInput.value = ''; // Limpa o input
+            }
+        });
+
+        deleteButton.addEventListener('click', () => {
+            const hinoNumber = hinoNumberInput.value;
+            const confirmation = confirm("Tem certeza de que deseja deletar este arquivo?");
+            if (confirmation) {
+                delete hinoFiles[hinoNumber];
+                alert(`Arquivo do hino ${hinoNumber} deletado com sucesso!`);
+                showHinoDetails(hinoNumber); // Atualiza a exibição
+            }
+        });
+
+        searchButton.addEventListener('click', () => {
+            const searchTerm = hinoSearch.value.toLowerCase();
+            hinoList.innerHTML = ''; // Limpa a lista antes de renderizar
+            hinos.forEach(hino => {
+                if (hino.numero.toString().includes(searchTerm) || hino.nome.toLowerCase().includes(searchTerm)) {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.textContent = `${hino.numero} - ${hino.nome}`;
+                    a.addEventListener('click', () => showHinoDetails(hino.numero));
+                    li.appendChild(a);
+                    hinoList.appendChild(li);
+                }
+            });
+            if (hinoList.innerHTML === '') {
+                hinoList.innerHTML = '<li>Nenhum hino encontrado.</li>';
+            }
+        });
+
+        // Renderiza a lista de hinos na inicialização
+        renderHinoList();
+    </script>
+</body>
+</html>
